@@ -2,7 +2,8 @@ from fastapi import FastAPI
 import uvicorn
 from typing import Optional
 from pydantic import BaseModel
-import uuidimport argparse
+import uuid
+import argparse
 
 parser = argparse.ArgumentParser(description="Run FastAPI application")
 parser.add_argument('-p', '--port', default=8000, type=int, help="Port to run the application on")
