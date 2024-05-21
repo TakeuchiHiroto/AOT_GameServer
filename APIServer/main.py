@@ -2,7 +2,11 @@ from fastapi import FastAPI
 import uvicorn
 from typing import Optional
 from pydantic import BaseModel
-import uuid
+import uuidimport argparse
+
+parser = argparse.ArgumentParser(description="Run FastAPI application")
+parser.add_argument('-p', '--port', default=8000, type=int, help="Port to run the application on")
+args = parser.parse_args()
 
 app = FastAPI()
 
@@ -110,4 +114,4 @@ def disconnect(token: str):
 
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=args.port)
