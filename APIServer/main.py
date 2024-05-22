@@ -4,6 +4,7 @@ from typing import Optional
 from pydantic import BaseModel
 import uuid
 import argparse
+import time
 
 parser = argparse.ArgumentParser(description="Run FastAPI application")
 parser.add_argument('-p', '--port', default=8000, type=int, help="Port to run the application on")
@@ -15,12 +16,13 @@ class GameData():
     UnitNo: int
     LaneNo: int
 
-
 class Lobby:
     token = ""
     player1 = False
     player2 = False
     join_player = 0
+
+    last_time = time.time()
 
     is_SetGameData = False
 
@@ -34,12 +36,22 @@ class Lobby:
         self.game_data.UnitNo = -1
         self.game_data.LaneNo = -1
         self.is_SetGameData = False
+        self.last_time = time.time()
 
 
 Lobbys = []
+last_time = time.time()
 
 @app.get("/join")
 def join():
+    global last_time
+    global Lobbys
+
+    # 最後のロビーが作成されてから10分以上経過していたら、全てのロビーを削除する
+    if time.time() - last_time > 600:
+        Lobbys = []
+    last_time = time.time()
+
     if len(Lobbys) == 0:
         token = str(uuid.uuid4())
         Lobbys.append(Lobby(token))
@@ -67,6 +79,11 @@ def lobby(token: str):
             print(lobby.token + " " + token) 
             if lobby.token == token:
                 print(token)
+                # ロビーが作成されてから10分以上経過していたら、ロビーを削除する
+                if time.time() - lobby.last_time > 600:
+                    Lobbys.remove(lobby)
+                    return {"status": "TimeOut"}
+
                 if lobby.player1 == True and lobby.player2 == True:
                     if lobby.join_player == 0:
                         lobby.join_player = 1
