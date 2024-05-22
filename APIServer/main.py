@@ -26,6 +26,8 @@ class Lobby:
 
     is_SetGameData = False
 
+    turn_end_flag = False
+
     game_data = GameData()
 
     def __init__(self, token : str):
@@ -37,6 +39,7 @@ class Lobby:
         self.game_data.LaneNo = -1
         self.is_SetGameData = False
         self.last_time = time.time()
+        self.turn_end_flag = False
 
 
 Lobbys = []
@@ -109,6 +112,25 @@ def game(token: str, unit_no: int, lane_no: int):
             lobby.game_data.LaneNo = lane_no
             lobby.is_SetGameData = True
             return {"status": "OK"}
+    return {"status": "TimeOut"}
+
+@app.get("/game/{token}/TurnEnd")
+def turn_end(token: str):
+    for lobby in Lobbys:
+        if lobby.token == token:
+            lobby.is_SetGameData = False
+            return {"status": "OK"}
+    return {"status": "TimeOut"}
+
+@app.get("/game/{token}/getTurnEnd")
+def get_turn_end(token: str):
+    for lobby in Lobbys:
+        if lobby.token == token:
+            if lobby.turn_end_flag:
+                lobby.turn_end_flag = False
+                return {"status": "OK"}
+            else:
+                return {"status": "NG"}
     return {"status": "TimeOut"}
 
 @app.get("/game/{token}/get")
