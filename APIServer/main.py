@@ -20,6 +20,10 @@ class Lobby:
     token = ""
     player1 = False
     player2 = False
+
+    player1_token = ""
+    player2_token = ""
+
     join_player = 0
 
     last_time = time.time()
@@ -28,8 +32,10 @@ class Lobby:
 
     turn_end_flag = False
 
-    game_data = GameData()
+    player1_ready = False
+    player2_ready = False
 
+    game_data = GameData()
     def __init__(self, token : str):
         self.token = token
         self.player1 = False
@@ -40,6 +46,11 @@ class Lobby:
         self.is_SetGameData = False
         self.last_time = time.time()
         self.turn_end_flag = False
+        self.player1_token = str(uuid.uuid4())
+        self.player2_token = str(uuid.uuid4())
+        self.player1_ready = False
+        self.player2_ready = False
+        
 
 
 Lobbys = []
@@ -63,44 +74,73 @@ def join():
 
     if last_lobby.player1 == False: # プレイヤー１がいない場合
         last_lobby.player1 = True
-        return {"token": last_lobby.token}
+        return {"token": last_lobby.player1_token}
     elif last_lobby.player2 == False: # プレイヤー２がいない場合
         last_lobby.player2 = True
-        return {"token": last_lobby.token}
-    
-    # どちらもいる場合(新しくロビーを作成する)
-    token = str(uuid.uuid4())
-    Lobbys.append(Lobby(token))
-    Lobbys[-1].player1 = True
-    return {"token": token}
+        return {"token": last_lobby.player2_token}
+    else:
+        # どちらもいる場合(新しくロビーを作成する)
+        token = str(uuid.uuid4())
+        Lobbys.append(Lobby(token))
+        Lobbys[-1].player1 = True
+        return {"token": Lobbys[-1].player1_token}
 
 
 @app.get("/lobby/{token}")
 def lobby(token: str):
     try:
         for lobby in Lobbys:
-            print(lobby.token + " " + token) 
-            if lobby.token == token:
-                print(token)
-                # ロビーが作成されてから10分以上経過していたら、ロビーを削除する
-                if time.time() - lobby.last_time > 600:
+            print(lobby.player1_token + ":" + lobby.player2_token + " : " + token) 
+            if lobby.player1_token == token:
+                # ロビーにプレイヤー１が最後にアクセスされてから20秒以上経過していたら、ロビーを削除する
+                if time.time() - lobby.last_time > 20:
                     Lobbys.remove(lobby)
                     return {"status": "TimeOut"}
+            lobby.last_time = time.time()
 
-                if lobby.player1 == True and lobby.player2 == True:
-                    if lobby.join_player == 0:
-                        lobby.join_player = 1
-                        print(lobby.join_player)
-                        return {"player": 1}
-                    elif lobby.join_player == 1:
-                        lobby.join_player = 2
-                        print(lobby.join_player)
-                        return {"player": 2}
-                else:
-                    return {"player": 0}
+            if lobby.player1_token == token:
+                lobby.join_player = 1
+                lobby.last_time = time.time()
+                return {"player" : 1}
+            elif lobby.player2_token == token:
+                lobby.join_player = 2
+                lobby.last_time = time.time()
+                return {"player" : 2}
         return {"status": "TimeOut"}
     except:
         return {"error": "Invalid token"}
+
+@app.get("/lobby/{token}/isStart")
+def isStart(token: str):
+    for lobby in Lobbys:
+        if lobby.token == token:
+            if lobby.join_player >= 2:
+                return {"status": "OK"}
+            else:
+                return {"status": "NG"}
+    return {"status": "TimeOut"}
+
+@app.get("/lobby/{token}/isPlayerStart")
+def isRedey(token: str):
+    for lobby in Lobbys:
+        if lobby.player1_token == token:
+            lobby.player1_ready = True
+            return {"status": "OK"}
+        if lobby.player2_token == token and lobby.player1_ready:
+            lobby.player2_ready = True
+            return {"status": "OK"}
+        
+    return {"status": "NG"}
+
+
+@app.get("/lobby/get_token/{token}")
+def getLobbyToken(token: str):
+    for lobby in Lobbys:
+        if lobby.player1_token == token:
+            return {"token": lobby.token}
+        elif lobby.player2_token == token:
+            return {"token": lobby.token}
+    return {"status": "TimeOut"}
 
 @app.get("/game/{token}/{unit_no}/{lane_no}")
 def game(token: str, unit_no: int, lane_no: int):
@@ -119,6 +159,7 @@ def turn_end(token: str):
     for lobby in Lobbys:
         if lobby.token == token:
             lobby.is_SetGameData = False
+            lobby.turn_end_flag = True
             return {"status": "OK"}
     return {"status": "TimeOut"}
 
