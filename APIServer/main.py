@@ -15,6 +15,9 @@ app = FastAPI()
 class GameData():
     UnitNo: int
     LaneNo: int
+    def __init__(self, unitNo, laneNo) -> None:
+        self.UnitNo = unitNo
+        self.LaneNo = laneNo
 
 class Lobby:
     token = ""
@@ -35,14 +38,12 @@ class Lobby:
     player1_ready = False
     player2_ready = False
 
-    game_data = GameData()
+    game_data = []
     def __init__(self, token : str):
         self.token = token
         self.player1 = False
         self.player2 = False
         self.join_player = 0
-        self.game_data.UnitNo = -1
-        self.game_data.LaneNo = -1
         self.is_SetGameData = False
         self.last_time = time.time()
         self.turn_end_flag = False
@@ -148,8 +149,7 @@ def game(token: str, unit_no: int, lane_no: int):
         if lobby.token == token:
             if(lobby.is_SetGameData):
                 return {"status": "NG"}
-            lobby.game_data.UnitNo = unit_no
-            lobby.game_data.LaneNo = lane_no
+            lobby.game_data.append(GameData(unit_no, lane_no))
             lobby.is_SetGameData = True
             return {"status": "OK"}
     return {"status": "TimeOut"}
@@ -179,8 +179,10 @@ def get_data(token: str):
     for lobby in Lobbys:
         if lobby.token == token:
             if(lobby.is_SetGameData):
+                if len(lobby.game_data) == 0:
+                    return  GameData(-1, -1)
                 lobby.is_SetGameData = False
-                return lobby.game_data
+                return lobby.game_data.pop(0)
             else:
                 return  {"status": "Null"}
     else:
