@@ -20,25 +20,26 @@ class GameData():
         self.LaneNo = laneNo
 
 class Lobby:
-    token = ""
-    player1 = False
-    player2 = False
+    # token = ""
+    # player1 = False
+    # player2 = False
 
-    player1_token = ""
-    player2_token = ""
+    # player1_token = ""
+    # player2_token = ""
 
-    join_player = 0
+    # join_player = 0
 
-    last_time = time.time()
+    # last_time = time.time()
 
-    is_SetGameData = False
+    # is_SetGameData = False
 
-    turn_end_flag = False
+    # turn_end_flag = False
 
-    player1_ready = False
-    player2_ready = False
+    # player1_ready = False
+    # player2_ready = False
 
-    game_data = []
+    # game_data = []
+
     def __init__(self, token : str):
         self.token = token
         self.player1 = False
@@ -51,6 +52,7 @@ class Lobby:
         self.player2_token = str(uuid.uuid4())
         self.player1_ready = False
         self.player2_ready = False
+        self.game_data = []
         
 
 
@@ -70,6 +72,7 @@ def join():
     if len(Lobbys) == 0:
         token = str(uuid.uuid4())
         Lobbys.append(Lobby(token))
+        Lobbys[-1].game_data = []
     
     last_lobby = Lobbys[-1]
 
@@ -84,6 +87,7 @@ def join():
         token = str(uuid.uuid4())
         Lobbys.append(Lobby(token))
         Lobbys[-1].player1 = True
+        Lobbys[-1].game_data = []
         return {"token": Lobbys[-1].player1_token}
 
 
@@ -91,7 +95,6 @@ def join():
 def lobby(token: str):
     try:
         for lobby in Lobbys:
-            print(lobby.player1_token + ":" + lobby.player2_token + " : " + token) 
             if lobby.player1_token == token:
                 # ロビーにプレイヤー１が最後にアクセスされてから20秒以上経過していたら、ロビーを削除する
                 if time.time() - lobby.last_time > 20:
@@ -197,4 +200,4 @@ def disconnect(token: str):
 
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=args.port)
+    uvicorn.run(app, host="0.0.0.0", port=args.port, log_level="error")
